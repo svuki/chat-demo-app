@@ -5,6 +5,7 @@ import PouchDB from 'pouchdb';
 import { create } from 'zustand'
 import pouchDBFind from 'pouchdb-find';
 import { RouterProvider, createBrowserRouter, Link, useParams, Navigate, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
+import { myFunction } from './utils';
 
 PouchDB.plugin(pouchDBFind);
 
@@ -78,7 +79,7 @@ function ChatRoom() {
 
   return (
     <div className="chatroom">
-      {messages.map((message: any) => <p>{`${message.sender}: ${message.content}`}</p>)}
+      {messages.map((message: any) => <p>{`${message.sender}: ${myFunction()} ${message.content}`}</p>)}
     </div>
   );
 }
@@ -90,7 +91,7 @@ function uuidv4() {
 }
 
 // The MessageComposer is where users compose and send messages
-function MessageComposer({user}: {user: string}) {
+export function MessageComposer({user }: {user: string}) {
   const { roomName } = useParams();
   const [message, setMessage] = useState('');
   // @ts-ignore

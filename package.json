@@ -24,7 +24,9 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "cosmos": "FAST_REFRESH=false cosmos",
+    "cosmos-export": "cosmos-export"
   },
   "eslintConfig": {
     "extends": [
@@ -47,6 +49,8 @@
   "devDependencies": {
     "@types/pouchdb": "^6.4.2",
     "pouchdb": "^9.0.0",
-    "pouchdb-find": "^9.0.0"
+    "pouchdb-find": "^9.0.0",
+    "react-cosmos": "^6.1.1",
+    "react-cosmos-plugin-webpack": "^6.1.1"
   }
 }

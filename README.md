@@ -1,46 +1,29 @@
-# Getting Started with Create React App
+# Toy Typescript Chat App (Zustand + React-Router + PouchDB + SASS)
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+This is a small chat application app using zustand, react-router, and pouchdb. It supports chatting bewteen different tabs or windows of the same browser. It is not a fully fledged chat application, rather a minimal demonstration of how to stitch things together.
 
-## Available Scripts
+When a new tab is opened, the tab is assigned a username. The application opens to the default chat room. From there the user can send messages, navigate to other chat rooms, or create additional chat rooms.
 
-In the project directory, you can run:
+This app demonstrates the following:
+1. using zustand for basic shared state
+2. using pouchDB for basic CRUD operations
+3. using pouchDB for realtime update listening
+4. using react-router for routing
+5. using SASS in place of plain css files
 
-### `npm start`
+## How This Was Setup
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+1. Create a new react app: `npx create-react-app chat-app --template typescript`
+2. Install dependencies: `npm i zustand react-router-dom pouchdb pouchdb-find`
+3. Install SASS globally: `npm i -g sass` (this is the sass CLI tool).
+4. Start the development server: `npm start`. This automatically compiles code changes and updates the dev server.
+5. Start the SASS watch process: `sass --watch src/sass:public/stylesheets`. This automaticalyl compiles any sass files in src/sass and writes them to public/stylesheets.
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+### Adding React Cosmos
 
-### `npm test`
-
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
-
-### `npm run build`
-
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
-
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
-
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
-
-### `npm run eject`
-
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
-
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
-
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
+React cosmos is a UI for component driven development. Here are the steps to get it setup.
+1. Install react cosmos.
+2. Add a cosmos.config.json to the root of the repo.
+3. Start react cosmos `npm run cosmos`
+4. Navigate to localhost:5000 to view components.
+5. Additional components can be added by created files called `xxx.fixture.jsx` in the `src/` folder.
