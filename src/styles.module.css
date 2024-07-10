@@ -1,0 +1,10 @@
+.overlayForm {
+    width: 33%;
+    height: 20%;
+    background-color: white;
+    border-radius: 10px;
+    border-style: inset;
+    border-color: grey;
+    padding: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}

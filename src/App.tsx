@@ -5,17 +5,31 @@ import PouchDB from 'pouchdb';
 import { create } from 'zustand'
 import pouchDBFind from 'pouchdb-find';
 import { RouterProvider, createBrowserRouter, Link, useParams, Navigate, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
-import { myFunction } from './utils';
+import styles from './styles.module.css';
+import { IMessageProps } from './Messages';
+import { IMessage } from './Composer';
+import ChatView from './ChatView'
 
 PouchDB.plugin(pouchDBFind);
 
+const pouchDB = new PouchDB('store');
+pouchDB.createIndex({index: {fields: ['room', 'type']}})
+
 interface AppState {
-  name: string,
+  messages: Array<IMessageProps>,
   rooms: Array<string>,
-  currentRoom: string,
-  addRoom: (room: string) => void
+  room: string,
+  user: string,
+  onNewMessageToRoom: (message: IMessage) => void,
+  onNewRooms: (rooms: Array<string>) => void,
+  onEnterRoom: (room: string) => Promise<void>,
+  enterRoomCreator: () => void,
+  exitRoomCreator: () => void,
+  submitRoomCreator: (room: string) => Promise<void>,
+  createRoomOverlay: boolean
 }
 
+  
 function generateRandomString(length: number): string {
     const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
     let result = '';
@@ -28,204 +42,159 @@ function generateRandomString(length: number): string {
     return result;
 }
 
-const pouchDB = new PouchDB('store');
-pouchDB.createIndex({index: {fields: ['room', 'type']}})
+async function loadMessages(room: string): Promise<Array<IMessage>> {
+  const result = await pouchDB.find({selector: {room: room}})
+  // @ts-ignore
+  return result.docs
+}
+
+const defaultRoom = {
+  type: 'room',
+  name: 'default',
+  _id: 'deafult'
+}
+
+async function loadRooms() {
+  const result = await pouchDB.find({selector: {type: 'room'}})
+  // @ts-ignore
+  return [defaultRoom.name, ...(result.docs.map((document) => document.name))]
+}
+
+function sendMessage(message: IMessage) {
+  pouchDB.put(message)
+}
 
 
 // Our zustand app store stores state our components rely on
 const useAppStore = create<AppState>()(
   (set) => (
     {
-      name: generateRandomString(5),
-      currentRoom: 'AnythingGoes',
-      rooms: ['AnythingGoes', 'Beginners', 'The X-Men'],
-      addRoom: (room: string) => set((state: AppState) => ({ rooms: state.rooms.concat([room]) }))
+      messages: [],
+      rooms: [],
+      room: 'default',
+      user: generateRandomString(10),
+      onNewMessageToRoom: (message: IMessage) => set((state) => ({messages: [...state.messages, message]})),
+      onNewRooms: (rooms: Array<string>) => {
+	console.log('New rooms', rooms);
+	set((state) => {
+	  let newRooms = rooms.filter((r) => state.rooms.find((x) => x == r) === undefined);
+	  return {rooms: [...state.rooms, ...newRooms]}
+	})
+      },
+      onEnterRoom: async (room: string) => {
+	let messages = await loadMessages(room);
+	set((state) => ( { room, messages }))
+      },
+      enterRoomCreator: () => set(() => ({createRoomOverlay: true})),
+      exitRoomCreator: () => set(() => ({createRoomOverlay: false})),
+      submitRoomCreator: async (room: string) => {
+	await pouchDB.put({_id: room, type: 'room', name: room})
+	set(() => ({createRoomOverlay: false}))
+      },
+      createRoomOverlay: false
     }
   )
 )
 
-// The ChatRoom is the list of all messages
-function ChatRoom() {
-  const { roomName } = useParams()
-  const [messages, setMessages] = useState([]);
+export function ChatApp() {
+  const store = useAppStore((state) => state);
+  let { roomName } = useParams();
+
   useEffect(() => {
-    const fetchMessages = async () => {
-      const result = await pouchDB.find({ selector: { room: roomName } });
+    console.log('room name is', roomName);
+    if (roomName == null) {
+      store.onEnterRoom('default')
+    }
+    else {
+      store.onEnterRoom(roomName)
+    }
+  }, [roomName])
+
+  // Effect which subscribes to new rooms
+  useEffect(() => {
+    const changes = pouchDB.changes({
+      since: 'now',
+      live: true,
+      include_docs: true
+    });
+    changes.on('change', function(change) {
+      let doc = change.doc;
       // @ts-ignore
-      setMessages(result.docs);
-    };
-
-    fetchMessages();
-
-    const changes = pouchDB
-      .changes({
-        since: 'now',
-        live: true,
-        include_docs: true,
-        selector: { room: roomName }
-      })
-      .on('change', change => {
+      if (doc.type === 'room') {
 	// @ts-ignore
-        if (change.doc && change.doc.room === roomName) {
-	// @ts-ignore
-          setMessages(prevMessages => [...prevMessages, change.doc]);
-        }
-      });
+	store.onNewRooms([doc.name])
+      }
+    })
+    return () => changes.cancel()
+  }, [])
 
-    return () => {
-      changes.cancel();
-    };
-  }, [roomName]);
 
-  return (
-    <div className="chatroom">
-      {messages.map((message: any) => <p>{`${message.sender}: ${myFunction()} ${message.content}`}</p>)}
-    </div>
-  );
-}
-
-function uuidv4() {
-  return "10000000-1000-4000-8000-100000000000".replace(/[018]/g, c =>
-    (+c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> +c / 4).toString(16)
-  );
-}
-
-// The MessageComposer is where users compose and send messages
-export function MessageComposer({user }: {user: string}) {
-  const { roomName } = useParams();
-  const [message, setMessage] = useState('');
-  // @ts-ignore
-    const handleChange = (e) => {
+  // Effect which subscribes to changes impacting the currentRoom
+  useEffect(() => {
     // @ts-ignore
-    setMessage(e.target.value);
-  };
-
-  const handleSubmit = () => {
-    // Handle message submission logic here
-    console.log(message);
-    const messageDocument = {
-      _id: uuidv4(),
-      content: message,
-      sender: user,
-      room: roomName
+    function handleChange(doc) {
+      if (doc.type === 'message' && doc.room === roomName) {
+	console.log('received message to active room', doc)
+	store.onNewMessageToRoom(doc)
+      }
     }
-    console.log(messageDocument);
-    pouchDB.put(messageDocument);
-    setMessage('');
-  };
+    
+    const changes = pouchDB.changes({
+      since: 'now',
+      live: true,
+      include_docs: true,
+    }).on('change', function(change) {
+      // Your callback function
+      handleChange(change.doc);
+    }).on('error', function(err) {
+      console.error('Error watching changes:', err);
+    });
 
-  return (
-    <div className="messageComposer">
-      <textarea
-	className="textInput"
-        value={message}
-        onChange={handleChange}
-        placeholder="Type your message here..."
-      />
-      <button onClick={handleSubmit}>
-        Send
-      </button>
-    </div>
-  );
-}
+    return () => changes.cancel()
+  }, [store.room])
 
-// RoomList is the sidebar that show the user all available rooms
-function RoomList() {
-  const rooms = useAppStore((state) => state.rooms);
-  const navigate = useNavigate();
-
-  const handleCreateNewRoom = () => {
-    navigate(`${window.location.pathname}?createNewRoom=true`);
-  };
-
-  return (
-    <div className="roomsList">
-      {rooms.map((room) => <Link key={room} to={`/${room}`}>{room}</Link>)}
-      <button onClick={handleCreateNewRoom}>Create New Room</button>
-    </div>
-  );
-}
-
-// The overlay component can be used to add additional rooms
-// @ts-ignore
-function Overlay({ onClose }) {
-  const [roomName, setRoomName] = useState('');
-
-  const handleSubmit = () => {
-    // Handle room creation logic here
-    onClose();
-  };
-
-  return (
-    <div className="overlay">
-      <div className="overlayForm">
-	<input
-          type="text"
-          value={roomName}
-          onChange={(e) => setRoomName(e.target.value)}
-          placeholder="Enter room name"
-	/>
-	<button onClick={handleSubmit}>Create</button>
-	<button onClick={onClose}>Cancel</button>
-      </div>
-    </div>
-  );
-}
-
-// The ChatView is the main App
-function ChatView() {
-  const user = useAppStore((state) => state.name);
-
-  // Either we are showing the main app & chat screen or an overlay form. We decide
-  // what to show based on the search params.
-  const [searchParams, setSearchParams] = useSearchParams();
-  const navigate = useNavigate();
-  const [isOverlayVisible, setOverlayVisible] = useState(false);
-  const location = useLocation();
+  useEffect(() => {
+    // @ts-ignore
+    console.log('running loadRooms');
+    loadRooms().then((rooms) => store.onNewRooms(rooms))
+    
+  }, [])
   
-  useEffect(() => {
-    if (searchParams.get('createNewRoom')) {
-      setOverlayVisible(true);
-    }
-  }, [searchParams]);
-  useEffect(() => {
-    if (!searchParams.get('createNewRoom')) {
-      setOverlayVisible(false);
-    }
-  }, [location]);
-
-
-  const handleCloseOverlay = () => {
-    setOverlayVisible(false);
-    searchParams.delete('createNewRoom');
-    setSearchParams(searchParams);
-  };
-
+  const props = {
+    messages: store.messages,
+    onMessage: sendMessage,
+    rooms: store.rooms,
+    room: store.room,
+    user: store.user,
+    onCreateRoom: store.enterRoomCreator,
+    onSubmitRoomCreator: store.submitRoomCreator,
+    createRoomOverlay: store.createRoomOverlay
+  }
+  
   return (
-    <div className="chat">
-      <RoomList/>
-      <div className="mainscreen">
-        <ChatRoom/>
-        <MessageComposer user={user}/>
-      </div>
-      {isOverlayVisible && <Overlay onClose={handleCloseOverlay} />}
+    <div className="app">
+      <ChatView {...props}/>
     </div>
-  );
+  )
 }
+
 
 // The browser element controls the routes
 const router = createBrowserRouter([
   {
     path: "/",
-    element: <Navigate to="/AnythingGoes"/>
+    element: <ChatApp />
   },
   {
     path: "/:roomName",
-    element: <ChatView />
+    element: <ChatApp />
   }
 ])
 
-// Our main app is just the router
-const App = () => <RouterProvider router={router} />
-
-export default App;
+export default function App() {
+  
+  return (
+    <RouterProvider router={router} />
+  )
+  
+}
