@@ -9,6 +9,7 @@ import styles from './styles.module.css';
 import { IMessageProps } from './Messages';
 import { IMessage } from './Composer';
 import ChatView from './ChatView'
+import { devtools } from 'zustand/middleware'
 
 PouchDB.plugin(pouchDBFind);
 
@@ -65,34 +66,35 @@ function sendMessage(message: IMessage) {
 }
 
 
-// Our zustand app store stores state our components rely on
 const useAppStore = create<AppState>()(
-  (set) => (
-    {
-      messages: [],
-      rooms: [],
-      room: 'default',
-      user: generateRandomString(10),
-      onNewMessageToRoom: (message: IMessage) => set((state) => ({messages: [...state.messages, message]})),
-      onNewRooms: (rooms: Array<string>) => {
-	console.log('New rooms', rooms);
-	set((state) => {
-	  let newRooms = rooms.filter((r) => state.rooms.find((x) => x == r) === undefined);
-	  return {rooms: [...state.rooms, ...newRooms]}
-	})
-      },
-      onEnterRoom: async (room: string) => {
-	let messages = await loadMessages(room);
-	set((state) => ( { room, messages }))
-      },
-      enterRoomCreator: () => set(() => ({createRoomOverlay: true})),
-      exitRoomCreator: () => set(() => ({createRoomOverlay: false})),
-      submitRoomCreator: async (room: string) => {
-	await pouchDB.put({_id: room, type: 'room', name: room})
-	set(() => ({createRoomOverlay: false}))
-      },
-      createRoomOverlay: false
-    }
+  devtools(
+    (set) => (
+      {
+	messages: [],
+	rooms: [],
+	room: 'default',
+	user: generateRandomString(10),
+	onNewMessageToRoom: (message: IMessage) => set((state) => ({messages: [...state.messages, message]})),
+	onNewRooms: (rooms: Array<string>) => {
+	  console.log('New rooms', rooms);
+	  set((state) => {
+	    let newRooms = rooms.filter((r) => state.rooms.find((x) => x == r) === undefined);
+	    return {rooms: [...state.rooms, ...newRooms]}
+	  })
+	},
+	onEnterRoom: async (room: string) => {
+	  let messages = await loadMessages(room);
+	  set((state) => ( { room, messages }))
+	},
+	enterRoomCreator: () => set(() => ({createRoomOverlay: true})),
+	exitRoomCreator: () => set(() => ({createRoomOverlay: false})),
+	submitRoomCreator: async (room: string) => {
+	  await pouchDB.put({_id: room, type: 'room', name: room})
+	  set(() => ({createRoomOverlay: false}))
+	},
+	createRoomOverlay: false
+      }
+    )
   )
 )
 
