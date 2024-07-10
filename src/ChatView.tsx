@@ -5,6 +5,7 @@ import CreateRoomOverlay from './CreateRoomOverlay';
 import './ChatView.css';
 
 interface IChatViewProps {
+  onEnterRoom: (room: string) => void,
   messages: Array<IMessageProps>,
   onMessage: (message: IMessage) => void,
   rooms: Array<string>,

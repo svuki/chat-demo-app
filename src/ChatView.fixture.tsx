@@ -7,6 +7,7 @@ let messages = [
 ]
 let props = {
   messages,
+  onEnterRoom: (room: string) => console.log('entering room', room),
   onMessage: (message: IMessage) => console.log(message),
   rooms: ['DefaultRoom', 'OtherRoom', 'YetAnotherRoom'],
   room: 'DefaultRoom',

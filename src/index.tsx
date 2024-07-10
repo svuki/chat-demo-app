@@ -3,6 +3,27 @@ import ReactDOM from 'react-dom/client';
 import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
+import { loadRooms, registerChangesListener } from './storage';
+import useAppState from './model';
+
+// Initial data loads
+// Note: because we aren't in a component, we have to use the .getState() method
+// on the zustand data store
+loadRooms().then((rooms) => useAppState.getState().onNewRooms(rooms))
+
+// Register the rooms listener
+// @ts-ignore
+registerChangesListener(function(doc) {
+  if (doc.type !== 'room') {
+    return
+  }
+  // Like before: outside component => need to use getState()
+  useAppState.getState().onNewRooms([doc.name])
+})
+
+// Simulate entering the default room
+useAppState.getState().onEnterRoom('default');
+
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
