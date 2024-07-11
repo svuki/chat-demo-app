@@ -4,7 +4,7 @@ import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
 import { loadRooms, registerChangesListener } from './storage';
-import useAppState from './model';
+import useAppState, { HistoryAction } from './model';
 
 // Initial data loads
 // Note: because we aren't in a component, we have to use the .getState() method
@@ -22,8 +22,15 @@ registerChangesListener(function(doc) {
 })
 
 // Simulate entering the default room
-useAppState.getState().onEnterRoom('default');
+useAppState.getState().onEnterRoom('default', HistoryAction.REPLACE);
 
+window.addEventListener('popstate', (e) => {
+  console.log(e)
+  let room = e.state.room;
+  if (room != null) {
+    useAppState.getState().onEnterRoom(room, HistoryAction.BACKTRACK)
+  }
+});
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement

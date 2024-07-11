@@ -2,8 +2,8 @@ import ChatView from './ChatView';
 import { IMessage } from './Composer';
 
 let messages = [
-  {content: "message1", sender: "user1"},
-  {content: "message2", sender: "user2"}
+  {_id: "1", content: "message1", sender: "user1"},
+  {_id: "2", content: "message2", sender: "user2"}
 ]
 let props = {
   messages,

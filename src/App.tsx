@@ -1,13 +1,13 @@
 import './App.css';
 import ChatView from './ChatView'
-import useAppStore, { AppState } from './model'
+import useAppStore, { AppState, HistoryAction } from './model'
 import { sendMessage } from './storage'
 
 export function ChatApp() {
   const store = useAppStore((state: AppState) => state);
   
   const props = {
-    onEnterRoom: store.onEnterRoom,
+    onEnterRoom: (room: string) => store.onEnterRoom(room, HistoryAction.PUSH),
     messages: store.messages,
     onMessage: sendMessage,
     rooms: store.rooms,
