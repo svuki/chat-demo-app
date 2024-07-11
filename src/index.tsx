@@ -21,8 +21,13 @@ registerChangesListener(function(doc) {
   useAppState.getState().onNewRooms([doc.name])
 })
 
-// Simulate entering the default room
-useAppState.getState().onEnterRoom('default', HistoryAction.REPLACE);
+// Get the requested room from the URL
+let entryRoom = window.location.pathname.slice(1);
+if (entryRoom === '') {
+  // If no room is specified, default to the default room
+  entryRoom = 'default'
+}
+useAppState.getState().onEnterRoom(entryRoom, HistoryAction.REPLACE);
 
 window.addEventListener('popstate', (e) => {
   console.log(e)

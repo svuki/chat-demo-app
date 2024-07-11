@@ -17,16 +17,29 @@ interface IChatViewProps {
 }
 
 export default function ChatView(props: IChatViewProps) {
+  if (!(props.rooms.find(x => x === props.room))) {
+    return (
+      <div className='chatView'>
+	<div className='chatSidebar'>
+	  <Sidebar {...props} />
+	</div>
+	<div className='chatArea'>
+	  <p>{`Woops! The chat room ${props.room} does not exist.`}</p>
+	</div>
+	{props.createRoomOverlay && <CreateRoomOverlay {...props} />}
+      </div>
+    )
+  }
   return (
     <div className='chatView'>
       <div className='chatSidebar'>
-	<Sidebar {...props}/>
+	<Sidebar {...props} />
       </div>
-    <div className='chatArea'>
-      <Messages {...props}/>
-      <Composer {...props}/>
+      <div className='chatArea'>
+	<Messages {...props} />
+	<Composer {...props} />
+      </div>
+      {props.createRoomOverlay && <CreateRoomOverlay {...props} />}
     </div>
-      { props.createRoomOverlay && <CreateRoomOverlay {...props}/> }
-  </div>
   )
 }
